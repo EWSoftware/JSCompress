@@ -1,0 +1,873 @@
+<!--------------------------------------------------------------------------->
+<!--                           INTRODUCTION
+
+ The Code Project article submission template (HTML version)
+
+Using this template will help us post your article sooner. To use, just
+follow the 3 easy steps below:
+
+     1. Fill in the article description details
+     2. Add links to your images and downloads
+     3. Include the main article text
+
+That's all there is to it! All formatting will be done by our submission
+scripts and style sheets.
+
+-->
+<!--------------------------------------------------------------------------->
+<!--                        IGNORE THIS SECTION                            -->
+<html>
+<head>
+<title>The Code Project</title>
+<Style>
+BODY, P, TD { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10pt }
+H2,H3,H4,H5 { color: #ff9900; font-weight: bold; }
+H2 { font-size: 13pt; }
+H3 { font-size: 12pt; }
+H4 { font-size: 10pt; color: black; }
+PRE { BACKGROUND-COLOR: #FBEDBB; FONT-FAMILY: "Courier New", Courier, mono; WHITE-SPACE: pre; }
+CODE { COLOR: #990000; FONT-FAMILY: "Courier New", Courier, mono; }
+</style>
+<link rel="stylesheet" type=text/css href="http://www.codeproject.com/styles/global.css">
+</head>
+<body bgcolor="#FFFFFF" color=#000000>
+<!--------------------------------------------------------------------------->
+
+
+<!-------------------------------     STEP 1      --------------------------->
+<!--  Fill in the details (CodeProject will reformat this section for you) -->
+
+<pre>
+Title:       A JavaScript Compression Tool for Web Applications
+Author:      Eric Woodruff
+Email:       Eric@EWoodruff.us
+Environment: Visual Studio .NET, IIS, C#, ASP.NET, JavaScript
+Keywords:    ASP.NET, C#, JavaScript, compress, compact
+Level:       Intermediate
+Description: A tool to compress JavaScript files to reduce their size and improve page load times.
+Section      Free Tools
+SubSection   Tools with Code
+</pre>
+
+<!-------------------------------     STEP 2      --------------------------->
+<!--  Include download and sample image information.                       -->
+
+<ul class=download>
+<li><a href='http://www.codeproject.com/csharp/jscompress/JSCompress.zip'>Download source and executables - 86 Kb</a></li>
+</ul>
+
+<!-------------------------------     STEP 3      --------------------------->
+<!--  Add the article text. Please use simple formatting (<h2>, <p> etc)   -->
+
+<h2>Introduction</h2>
+<p>This article presents a JavaScript compression tool that takes your
+JavaScript source code and compresses it by removing all comments,
+extraneous whitespace, and optionally as many line feeds as possible, and
+by optionally shortening function parameter and variable names. This will
+reduce the script size and may help your pages load faster and reduce
+bandwidth. A minor side benefit when line feed removal and variable
+name compression is enabled is that it provides lightweight obfuscation of
+the code making it harder for the casual user to read and/or play around with
+it. It won't stop a determined user from reformatting and reverse
+engineering it, but that is not the intent of this tool.</p>
+
+<p>I developed this tool for use in my own ASP.NET projects. The code is
+written in C# but as long as you have the .NET Framework installed, it can
+be used to compress JavaScript for any web project, .NET or otherwise.  The
+supplied project file is for Visual Studio 2003 but it can be opened,
+converted, and successfully compiled under Visual Studio 2005 as well.</p>
+
+<p>There are three levels of compression:</p>
+
+<ul>
+<li><b>No Line Feed Removal</b>
+<p>Line feeds are not removed from the script (except those deemed
+extraneous such as on blank lines). Only comments and extraneous whitespace
+is removed. This mode provides good compression and insures that no code is
+broken.</p></li>
+
+<li><b>Line Feeds Removed Wherever Possible</b>
+<p>In this mode, line feeds are removed from the ends of statements in
+which it is determined safe to do so, usually resulting in an extra 2% to
+5% compression. For example, lines ending in an operator such as <code
+lang=javascript>*</code>, <code lang=javascript>/</code>, <code
+lang=javascript>+</code>, <code lang=javascript>-</code>, etc. and those
+ending in a semi-colon will have any trailing line feeds removed. There are
+several other conditions that can be met resulting in removal, and those
+are described below in the code description sections. Steps are also taken
+to prevent removal in instances such as missing semi-colons so as not to
+break code. However, I may not have caught all such conditions so if code
+is broken by this mode, you can fall back to the above mode. This mode
+achieves its best results when you are diligent about putting semi-colons
+after all statements that can use them to properly mark their
+endpoints.</p></li>
+
+<li><b>Function Parameter and Variable Name Compression</b>
+<p>This can be combined with one of the first two compression options to
+further reduce the script size.  When enabled, as many function parameter
+and variable names as possible will be renamed and shortened.  The naming
+scheme starts with the names <code>a</code> through <code>z</code>, then
+<code>_a</code> through <code>_z</code>, <code>_aa</code> through
+<code>_az</code>, <code>_ba</code> through <code>_bz</code>, etc.  With
+this option enabled, script size can usually be reduced by an additional
+10% to 15%. There may be a higher potential for broken code with this
+option so it is not enabled by default. If enabled, it is recommended that
+you thoroughly test all compressed scripts before deploying them.</p></li></ul>
+
+<p>Code blocks can also be surrounded by special <code>// #pragma
+NoCompStart</code> and <code>// #pragma NoCompEnd</code> comments to
+exclude sections from compression. This is useful for including copyright
+notices in the header of compressed script files or skipping sections that
+you are testing. For example:</p>
+
+<pre lang=jscript>
+// #pragma NoCompStart
+//====================================================
+// File    : TestScript1.js
+// Author  : Eric Woodruff
+// Updated : 07/23/2003
+// #pragma NoCompEnd
+
+// Anything from this point forward will be compressed
+// .
+// .
+// .
+
+// #pragma NoCompStart
+
+// Skip compression on this section
+function Test()
+{
+    return true;
+}
+
+// #pragma NoCompEnd
+
+// Resume compression
+// .
+// .
+// .
+</pre>
+
+<p>The <code>#pragma</code> comments should appear on lines by themselves
+and will be removed from the final compressed script. Any trailing comment
+text on the same line as the <code>#pragma</code> is ignored and will be
+removed as well. The compressor doesn't care about spacing or case on the
+<code>#pragma</code> statements either.</p>
+
+<h2>The Programs</h2>
+<p>Two versions of the program are provided. The first is an interactive
+version that you can use to test the different modes of compression. It is
+a Windows Forms application written in C#. After running it, simply paste
+your JavaScript code into the <i>Original Script</i> text box, turn the
+<i>Line Feed Removal</i> and <i>Variable Name Compression</i> options on or
+off, and click the <i>Compress</i> button. The compressed script is then
+shown in the <i>Compressed Script</i> textbox with some compression
+statistics displayed below it. The text can be copied to the clipboard from
+the <i>Compressed Script</i> text box.</p>
+
+<p>Note that when using the <i>Test only variable name compression</i>
+option, the script code is not compressed.  Only parameter and variable
+names are compressed.  This may help locate a problem with the variable
+name compression code.  Although the script code is not compressed,
+comments are removed so that the naming results match (i.e. it won't use
+different names due to matching a word that appears in a comment such as
+"a", "be", or "to").
+
+<p>The second and most useful tool is a console mode version of the
+compressor that can be used as the command for a pre-build step in ASP.NET
+projects to compress scripts in the project. It can also be used to
+compress scripts that are stored in custom web controls as embedded
+resources. The command line syntax is shown below. Options and file specs
+are case-insensitive and are processed from left to right as
+encountered.</p><pre lang=text>JSCompressCL [/options] filespec [[/options]
+filespec ...]</pre>
+
+<p>The available command line options are as follows:</p>
+
+<table cellSpacing="0" cellPadding="5" width="80%" border="1">
+<tr>
+<td style="BACKGROUND: #bfbfbf"><b>Option</b></td>
+<td style="BACKGROUND: #bfbfbf"><b>Description</b></td></tr>
+<tr>
+<td>/?</td>
+<td>Show help</td>
+<tr>
+<td>/q</td>
+<td>Quiet mode. Don't display compression statistics.</td></tr>
+<tr>
+<td>/debug</td>
+<td>Debug build, compression is suppressed and scripts are passed through
+to the output folder unmodified to make debugging easier. Compression can
+be forced using the /f option.</td></tr>
+<tr>
+<td>/release</td>
+<td>Release build, compression enabled (the default if no build option is
+specified).</td></tr>
+<tr>
+<td>/k</td>
+<td>(Keep) No line feeds are removed unless they are extraneous (i.e. blank
+lines).</td></tr>
+<tr>
+<td>/d</td>
+<td>(Delete) Line feeds are removed wherever possible (the default if no
+line feed removal option is specified).</td></tr>
+<td>/v</td>
+<td>Compress variable and parameter names.</td></tr>
+<td>/t</td>
+<td>Variable name compression only (for testing it).  This will strip
+comments as well but all other compression options are ignored.</td></tr>
+<tr>
+<td>/f</td>
+<td>Force compression on processed files in debug builds. Useful for
+testing compressed scripts in debug builds.</td></tr>
+<tr>
+<td>/r</td>
+<td>Recurse sub-folders in the filespec too.  The sub-folder structure will
+be duplicated in the output folder.</td></tr>
+<tr>
+<td>/o:&lt;dir&gt;</td>
+<td>Specify output folder (current folder if not specified).</td></tr>
+<tr>
+<td>filespec</td>
+<td>One or more files to compress, wildcards accepted.</td></tr>
+</table>
+
+<p>The debug and release build options are spelled out to make it easy to
+specify them in a project's pre-build step using one of the IDE macros.
+This is described below.</p>
+
+<p>At the minimum, you should specify an output folder other than the one
+in which the scripts to compress reside. For example, you may want to store
+the uncompressed scripts in a folder called <i>ScriptsDev</i> and tell the
+compressor to store the compressed scripts in a folder called
+<i>Scripts</i> that the application will use at runtime. The compressor
+will not overwrite the source scripts. On debug builds, it also checks for
+an existing copy of the script and, if the timestamp is greater than or
+equal to the source script, it skips it. This saves recreating a script
+file that has not changed each time the project is built during debugging.
+An "up to date" message is displayed in such cases. The scripts are always
+processed in release builds to ensure that they are up to date and are
+compressed.</p>
+
+<p>If a script is compressed, the tool displays the source and destination
+filenames along with compression statistics. The <code>/q</code> command line
+option can be used to turn them off. Some examples are shown below (lines
+wrapped for display purposes):</p>
+
+<pre lang=text>
+Implied release build with line feed removal,
+no stats displayed.
+
+    JSCompressCL /q /o:\MyProj\Scripts
+        \MyProj\ScriptsDev\*.js
+
+Explicit release build with line feed removal,
+stats are displayed.
+
+    JSCompressCL /release /o:\MyProj\Scripts
+        \MyProj\ScriptsDev\*.js
+
+Line feed removal disabled for first file set, line feed
+removal and variable name compression enabled for second file set.
+
+    JSCompressCL /o:\MyProj\Scripts
+        /k \MyProj\ScriptsDev1\*.js
+        /d /v \MyProj\ScriptsDev2\*.js
+
+Debug build, no compression.  Scripts are passed
+through unmodified for debugging purposes.
+
+    JSCompressCL /Debug /o:\MyProj\Scripts
+        \MyProj\ScriptsDev\*.js
+
+Debug build with forced compression.  Scripts are
+compressed even though it's a debug build.
+
+    JSCompressCL /Debug /f /o:\MyProj\Scripts
+        \MyProj\ScriptsDev\*.js</pre>
+
+<h2>Using the Console Version as a Project's Pre-Build Step</h2>
+<p>Copy the console version of the application to a folder somewhere on
+your PC. To use the console version as the pre-build step of a web project,
+create one folder to contain the uncompressed scripts (<i>ScriptDev</i> for
+example) and another to contain the compressed scripts to be used at
+runtime by the application (<i>Scripts</i> for example). To create a new
+folder in the project, right click on the project name, select
+<i>Add...</i>, select <i>New Folder</i>, and enter the folder name. Add a
+new script to the folder by right clicking on it and selecting
+<i>Add...</i> and then <i>Add New Item...</i> to create a new item or
+<i>Add Existing Item...</i> if you copied an existing file to the new
+folder. Once added to the project folder, right click on the script and
+select <i>Properties</i>. Change the <i>Build Action</i> property from
+<i>Content</i> to <i>None</i> for the scripts in the development
+(uncompressed) folder. You can add copies of the scripts in the compressed
+folder and leave their build action set to <i><b>Content</b></i> if you
+want to do so.</p>
+
+<p>The next step is to right click on the project name, select
+<i>Properties</i>, expand the <i>Common Properties</i> folder, and select
+the <i>Build Events</i> sub-item. Click in the <i>Pre-build Event Command
+Line</i> option to enter the command line to run. You can click the
+<b>"..."</b> button to open a dialog with a larger editor and a list of
+available macros. Below is an example of a common command line that can be
+used (lines wrapped for display purposes). Replace the path to the tool
+with the path where you stored it on your PC.</p>
+
+<pre lang=text>
+D:\Utils\JSCompressCL /$(ConfigurationName)
+    /o:$(ProjectDir)Scripts $(ProjectDir)ScriptsDev\*.js
+</pre>
+
+<p>The <code>/$(ConfigurationName)</code> option expands to the
+configuration name in effect at the time of the build. Assuming the
+defaults, this will equate to either <i>/Debug</i> or <i>/Release</i> thus
+turning off compression for debug builds so that you can test your scripts
+and debug them and turn it on for release builds. Note that the command
+line processor will look for an entry starting with "Debug" or "Release" so
+you can use custom configuration names. As long as they start with either
+of those two keywords, it will select the appropriate build type. If the
+configuration name contains spaces, place quote marks around the option. As
+noted, in debug builds scripts are passed through to the destination folder
+as-is to make debugging easier. If you want the scripts compressed in debug
+builds, add the <code>/f</code> command line option to force compression to
+be used.</p>
+
+<p>The <code>/o:$(ProjectDir)Scripts</code> option equates to the
+compressed script folder. For my projects, it is always a subfolder of the
+main project folder, thus the use of the <code>$(ProjectDir)</code> macro.
+Modify the path name accordingly for your own projects.</p>
+
+<p>The same applies for the <code>$(ProjectDir)ScriptsDev\*.js</code>
+option which tells the tool where to find the scripts that need to be
+compressed. As above, modify the path name accordingly for your own
+projects.</p>
+
+<h3>Compressing Scripts That are Embedded Resources</h3>
+<p>If you are developing a web control, for example, that uses scripts that
+are contained in the assembly as embedded resources, you can still compress
+them using the above steps. The only difference is that when setting up the
+folders as described above, make an initial copy of the scripts and place
+them in the compressed script folder. In the project manager, right click
+on the scripts in the compressed script folder, select <i>Properties</i>
+and change the <i>Build Action</i> property to <i>Embedded Resource</i>.
+When you build the project, the pre-build command will compress the
+scripts, the project will then be built in the normal fashion, and the
+compressed scripts will be embedded as resources in the assembly.</p>
+
+<h2>How the Code Works</h2>
+<p>The code for the Windows Forms and the console applications is fairly
+straightforward and there is nothing much to describe. The forms version
+takes data from the controls and uses it with the <code>JSCompressor</code>
+class. The console mode version does the same thing but using command line
+parameters. The class itself is where the action occurs and is described
+below. The code for the class can be found in the <i>JSCompressor.cs</i>
+file.</p>
+
+<h3>Basic Information</h3>
+<p>The <code>JSCompressor</code> class is fairly simple and consists of a
+couple of constructors, properties to modify the line feed removal mode and
+variable name compression settings, a public method to compress scripts, and
+several private data members and methods. The default constructor enables
+line feed removal by default. A second version of the constructor takes a
+Boolean parameter that lets you specify the initial state for line feed
+removal (<code lang=cs>true</code> for enabled, <code lang=cs>false</code>
+for disabled). The <code>LineFeedRemoval</code> property lets you modify
+the mode after construction.  The third constructor takes two Boolean
+parameters that let you specify the initial state for the line feed
+removal and variable name compression options.  The
+<code>CompressVariableNames</code> property can be used to modify the
+variable name compression setting after construction.  Variable name
+compression is off by default.  In addition, the
+<code>TestVariableNameCompression</code> property can be set to true to
+test the variable name compression code.  When set to true, script
+compression is disabled and only parameter and variable names are
+compressed.  As noted above, comments are removed though so that you end up
+with an identical set of renamed variables and parameters.</p>
+
+<h3>The Compression Process</h3>
+<p>The <code>Compress</code> method of the <code>JSCompressor</code> class
+does all of the work. It is passed a copy of the uncompressed script and
+returns the compressed version.</p>
+
+<pre lang=cs>
+/// &lt;summary&gt;
+/// Compress the specified JavaScript code.
+/// &lt;/summary&gt;
+/// &lt;param name="strScript"&gt;The script to compress&lt;/param&gt;
+/// &lt;returns&gt;The compressed script&lt;/returns&gt;
+public string Compress(string strScript)
+{
+    string strCompressed;
+    char [] achScriptChars;
+
+    // Don't bother if there is nothing to compress
+    if(strScript == null || strScript.Length == 0)
+        return strScript;
+
+    // Set up for compression
+    scLiterals.Clear();
+    scNoComps.Clear();
+
+    // Create the regular expressions and match evaluators on
+    // first use.
+    if(reInsLit == null)
+    {
+        reExtNoComp = new Regex(@"//\s*#pragma\s*NoCompStart.*?" +
+            @"//\s*#pragma\s*NoCompEnd.*?\n",
+            RegexOptions.Multiline | RegexOptions.Singleline |
+            RegexOptions.IgnoreCase);
+        reDelNoComp = new Regex(@"//\s*#pragma\s*NoComp(Start|End).*\n",
+            RegexOptions.Multiline | RegexOptions.IgnoreCase);
+        reInsLit = new Regex("\xFE|\xFF");
+        meInsLit = new MatchEvaluator(OnMarkerFound);
+        meExtNoComp = new MatchEvaluator(OnNoCompFound);
+
+        reFuncParams = new Regex(@"function.*?\((.*?)\)(.*?|\n)?\{",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        reFindVars = new Regex(@"(var\s+.*?)(;|$)",
+            RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        reStripVarPrefix = new Regex(@"^var\s+",
+            RegexOptions.IgnoreCase);
+        reStripParens = new Regex(@"\(.*?,.*?\)|\[.*?,.*?\]",
+            RegexOptions.IgnoreCase);
+        reStripAssign = new Regex(@"(=.*?)(,|;|$)",
+            RegexOptions.IgnoreCase);
+    }
+</pre>
+
+<p>The first part initializes two string collections that will end up
+containing any "no compression" sections specified by the
+<code>#pragma</code> comments and any literal strings found during parsing.
+A set of regular expressions and match evaluators are also initialized to
+help with the parsing and compression process. Their use is described
+later.</p>
+
+<pre lang=cs>
+// Extract sections that the user doesn't want compressed
+// and replace them with a marker.
+strCompressed = reExtNoComp.Replace(strScript, meExtNoComp);
+
+// This is the match evaluator referenced by meExtNoComp:
+
+// Extract the sections that the user doesn't want compressed
+// and save them for reinsertion at the end without the #pragmas.
+// They are replaced with a marker character.
+private string OnNoCompFound(Match match)
+{
+    scNoComps.Add(reDelNoComp.Replace(match.Value, String.Empty));
+    return "\xFE";
+}
+</pre>
+
+<p>The next part extracts the sections, if any, that the user does not want
+compressed as specified via the <code>#pragma</code> comments (i.e.
+copyright notices at the top of the file). To do this, a match evaluator is
+used that adds the found section to the string collection and replaces it
+in the script with a marker character (<code>\xFE</code>). The marker will
+be replaced with the uncompressed section at the end of the process.
+Replacing the section with a marker helps the remainder of the code to
+remove extraneous whitespace by giving it less to look at. The
+<code>#pragma</code> comments are stripped from the sections before storing
+them in the collection.</p>
+
+<pre lang=cs>
+// Split the string into an array for parsing
+achScriptChars = strCompressed.ToCharArray();
+
+// Remove comments and extract literals
+CompressArray(achScriptChars);
+</pre>
+
+<p>After the "no compression" sections have been removed, the script is
+split into a character array to make parsing simpler. The array is passed
+to the <code>CompressArray</code> method which scans the script one
+character at a time looking for block comments, line comments, literal
+strings, and JavaScript regular expressions enclosed in slashes (/ /).
+Block comments and line comments are removed by setting all characters
+within the comments to a null in the array. However, sections between
+<code>/*@</code> and <code>@*/</code> are left in the code as they indicate
+a conditional compilation section.  The code between the conditional
+section markers will still be compressed.  Note that if you do use
+conditional compilation comments, it is important to end the line preceding
+the block with a semi-colon as the browser will not process the conditional
+block unless it starts on a distinct line.</p>
+
+<p>Literal strings and regular expressions are extracted and stored in a
+string collection and are replaced by a marker character
+(<code>\xFF</code>) using a method similar to extracting and storing the
+"no compression" sections. Again, this helps the final steps remove
+extraneous whitespace by giving it less to look at. During this process,
+carriage returns are converted to line feeds which makes it easy to remove
+them later on as well.</p>
+
+<pre lang=cs>
+// Gather up what's left and remove the nulls
+strCompressed = new String(achScriptChars);
+strCompressed = strCompressed.Replace("\0", String.Empty);
+
+// Skip code compression?
+if(!varCompTest)
+{
+    // Remove all leading and trailing whitespace and condense runs
+    // of two or more whitespace characters to just one.
+    strCompressed = Regex.Replace(strCompressed, @"^[\s]+|[ \f\r\t\v]+$",
+        String.Empty, RegexOptions.Multiline);
+    strCompressed = Regex.Replace(strCompressed, @"([\s]){2,}", "$1");
+</pre>
+
+<p>Once the array has been parsed, it is converted back into a string and
+all null characters (representing removed sections) are deleted. After
+that, regular expressions are used to remove leading and trailing
+whitespace from all lines and to condense all runs of two or more
+whitespace characters to just one.  This part and the subsequent steps are
+skipped if only testing variable name compression.</p>
+
+<pre lang=cs>
+// Line feed removal requested?
+if(removeLineFeeds)
+{
+    // Remove line feeds when they appear near numbers with signs
+    // or operators.  A space is used between + and - occurrences
+    // in case they are increment/decrement operators followed by
+    // an add/subtract operation.  In other cases, line feeds are
+    // only removed following a + or - if it is not part of an
+    // increment or decrement operation.
+    strCompressed = Regex.Replace(strCompressed, @"([+-])\n\1",
+        "$1 $1");
+    strCompressed = Regex.Replace(strCompressed, @"([^+-][+-])\n",
+        "$1");
+    strCompressed = Regex.Replace(strCompressed,
+        @"([\xFE{}([,&lt;&gt;/*%&amp;|^!~?:=.;])\n", "$1");
+    strCompressed = Regex.Replace(strCompressed,
+        @"\n([{}()[\],&lt;&gt;/*%&amp;|^!~?:=.;+-])" ,"$1");
+}
+</pre>
+
+<p>The next step is to see if line feed removal has been requested. If so,
+all line feeds occurring near numbers with signs and near operators are
+removed. As noted in the comments, care is taken around the <code
+lang=javascript>+</code> and <code lang=javascript>-</code> characters so
+that whitespace and line feeds are left around increment and decrement
+operations (<code lang=javascript>++</code> and <code
+lang=javascript>--</code>) where needed to prevent breaking code.</p>
+
+<pre lang=cs>
+// Strip all unnecessary whitespace around operators
+strCompressed = Regex.Replace(strCompressed,
+    @"[ \f\r\t\v]?([\n\xFE\xFF/{}()[\];,&lt;&gt;*%&amp;|^!~?:=])[ \f\r\t\v]?",
+    "$1");
+strCompressed = Regex.Replace(strCompressed, @"([^+]) ?(\+)",
+    "$1$2");
+strCompressed = Regex.Replace(strCompressed, @"(\+) ?([^+])",
+    "$1$2");
+strCompressed = Regex.Replace(strCompressed, @"([^-]) ?(\-)",
+    "$1$2");
+strCompressed = Regex.Replace(strCompressed, @"(\-) ?([^-])",
+    "$1$2");
+</pre>
+
+<p>A final set of regular expressions is used to strip whitespace from
+around operators and the marker characters. Again, special care is taken
+with the <code lang=javascript>+</code> and <code lang=javascript>-</code>
+operators so as to correctly strip whitespace around occurrences of
+increment and decrement operations.</p>
+
+<pre lang=cs>
+// Try for some additional line feed removal savings by
+// stripping them out from around one-line if, while,
+// and for statements and cases where any of those
+// statements immediately follow another.
+if(removeLineFeeds)
+{
+    strCompressed = Regex.Replace(strCompressed,
+        @"(\W(if|while|for)\([^{]*?\))\n", "$1");
+    strCompressed = Regex.Replace(strCompressed,
+        @"(\W(if|while|for)\([^{]*?\))((if|while|for)\([^{]*?\))\n",
+        "$1$3");
+    strCompressed = Regex.Replace(strCompressed,
+        @"([;}]else)\n", "$1 ");
+}
+</pre>
+
+<p>After removing all extraneous whitespace, if line feed removal has been
+requested, a few additional steps are taken to remove unnecessary line
+feeds from around <code lang=javascript>if</code>, <code
+lang=javascript>while</code>, and <code lang=javascript>for</code>
+statements. This helps remove line feeds from instances where those
+statements occur one after the other in any combination with no intervening
+brace character. For example, the following would get condensed to a single
+line:</p>
+
+<pre lang=jscript>
+    if(a == 1)
+        for(b = 0; b &lt; 10; b++)
+            while(!c)
+                c = DoSomething();
+</pre>
+
+<p>If the code contains semi-colons on all statements that need them to
+mark their endpoints, the above process can usually remove all line feeds
+from the script reducing it to one long stream of characters thus providing
+maximum code compression.</p>
+
+<pre lang=cs>
+    // Compress variable names too if requested
+    if(compressVarNames || varCompTest)
+        strCompressed = CompressVariables(strCompressed);
+
+    // Put back the literals and uncompressed sections removed
+    // during the parsing step.
+    noCompCount = literalCount = 0;
+    strCompressed = reInsLit.Replace(strCompressed, meInsLit);
+
+    return strCompressed;
+}
+
+// This is the match evaluator referenced by meInsLit:
+
+// Replace a literal or uncompressed section marker with the
+// next entry from the appropriate collection.
+private string OnMarkerFound(Match match)
+{
+    if(match.Value == "\xFE")
+        return scNoComps[noCompCount++];
+
+    return scLiterals[literalCount++];
+}
+</pre>
+
+<p>Variable name compression occurs next if requested.  This process will
+be described in the next section.  The last step is to reinsert the
+uncompressed sections and literal strings. In a manner similar to
+extraction, a regular expression and a match evaluator are used. Two
+private counters are used to keep track of the progress through the string
+collections. As each marker character is found, the match evaluator is
+called and, depending on the marker found, it returns the next element from
+the appropriate collection which then takes the place of the marker. The
+matching counter is also incremented ready for the next match. After the
+insertions have been made, the compressed script is returned to the
+caller.</p>
+
+<h3>Parameter and Variable Name Compression</h3>
+The <code>CompressVariables</code> method handles the compression of
+function parameter and variable names.  Since there is the potential to
+break code, the compression method takes a conservative approach to
+locating and renaming variables.
+
+<ul>
+<li>Function parameter names appearing within the parentheses on a function
+declaration are included for compression.</li>
+<li>Variable names on the same line as a <code>var</code> statement are
+included for compression.  However, if the <code>var</code> statement spans
+lines and extra line feed removal is disabled, some names may be missed.  For
+example:</li>
+
+<pre lang="jscript">
+var string1, string2,
+    num1, num2;
+</pre>
+
+<p>In the above example, <code>string1</code> and <code>string2</code> will
+always be included but <code>num1</code> and <code>num2</code> will not be
+included if the <code>LineFeedRemoval</code> property is set to false as
+they will always appear on a line by themselves with no indication that
+they are variables.</p>
+
+<li>On a similar note, variable names that appear in the code but that are
+not formally declared with a <code>var</code> statement will always be
+ignored (i.e. global variables declared in another module).</li>
+
+<li>If you declare global variables that are referenced in other script
+files, you should wrap their declarations in a
+<code>#pragma NoCompStart/NoCompEnd</code> section so that they are not
+renamed within the file that they are declared.</li>
+</ul>
+
+<p>The actual renaming process occurs as follows:</p>
+
+<pre lang="cs">
+private string CompressVariables(string script)
+{
+    StringCollection scVariables = new StringCollection();
+    string[] varNames;
+    string name = null, matchName;
+    bool incVarName;
+
+    // Find function parameters
+    MatchCollection matches = reFuncParams.Matches(script);
+
+    foreach(Match m in matches)
+    {
+        varNames = m.Groups[1].Value.Split(',');
+
+        // Add each unique name to the list
+        foreach(string s in varNames)
+        {
+            name = s.Trim();
+
+            if(name.Length != 0 && !scVariables.Contains(name))
+                scVariables.Add(name);
+        }
+    }
+</pre>
+
+<p>The first part searches for function parameters using a regular expression
+created earlier.  The parameter list is split apart and each unique
+parameter name is added to the variable name string collection.</p>
+
+<pre lang="cs">
+// Find variable declarations
+matches = reFindVars.Matches(script);
+
+foreach(Match m in matches)
+{
+    // Remove the "var " declaration prefix
+    name = reStripVarPrefix.Replace(m.Groups[1].Value, String.Empty);
+
+    // Strip brackets and parentheses containing commas such
+    // as array declarations and method calls with parameters.
+    name = reStripParens.Replace(name, String.Empty);
+
+    // Remove assignment operations
+    name = reStripAssign.Replace(name, "$2");
+
+    varNames = name.Split(',');
+
+    // Add each unique name to the list
+    foreach(string s in varNames)
+    {
+        name = s.Trim();
+
+        if(name.Length != 0 && !scVariables.Contains(name))
+            scVariables.Add(name);
+    }
+}
+</pre>
+
+<p>The next part searches for <code>var</code> statements that contain variable
+name declarations using a regular expression created earlier.  This step is
+slightly more complex as it must account for assignments that occur within
+the statement as well as possible references to array indices that might
+cause an incorrect split to occur.  For example:</p>
+
+<pre lang="jscript">
+var num1, string1 = "Test", num2 = array1[3, 0];
+var resultString = functionCall("A", "B");
+</pre>
+
+<p>The <code>var</code> prefix is removed from the statement followed by any
+parts of the expressions that contain brackets or parentheses containing
+commas (i.e. two-dimensional array indices, function call parameters, etc.
+as shown in the above examples).  Once they are removed, a final regular
+expression is used to remove any remaining assignment text from the equal
+sign to the next comma or end of the line.  Once this is done, it is safe
+to split the string on each comma and add the unique names to the variable
+name string collection.</p>
+
+<pre lang="cs">
+// Replace each variable in the list with a shorter name.
+// Start with "a" through "z" then use "_a" through "_z",
+// "_aa" to "_az", "_ba" to "_bz", etc.
+newVarName = new char[10];
+newVarName[0] = '\x60';
+varNamePos = 0;
+incVarName = true;
+
+foreach(string replaceName in scVariables)
+{
+    // Increment the variable name and make sure it isn't
+    // in use already.
+    if(incVarName)
+    {
+        do
+        {
+            IncrementVariableName();
+
+            name = new String(newVarName, 0, varNamePos + 1);
+            matchName = @"\W" + name + @"\W";
+
+        } while(Regex.IsMatch(script, matchName));
+
+        incVarName = false;
+    }
+
+    // Don't bother if the existing name is shorter.  This check
+    // could be removed to obfuscate the variable name even if it
+    // would be longer.
+    if(name.Length < replaceName.Length)
+    {
+        incVarName = true;
+        script = Regex.Replace(script,
+            @"(\W)" + replaceName + @"(?=\W)", "$1" + name);
+    }
+}
+
+return script;
+</pre>
+
+<p>The final step loops through each unique variable name found and
+substitutes a shorter name.  Once done, the compressed script is returned.
+As noted in the comments, the naming scheme starts with <code>a</code>
+through <code>z</code> and, if they run out, it adds an underscore prefix
+and carries on (<code>_a</code> through <code>_z</code>).  The underscore
+ensures that it will not accidentally create a name that could match a
+keyword once it gets past single letter variable names.  Should those names
+be exhausted, it starts appending letters and running through each set from
+<code>_aa</code> to <code>_az</code>, <code>_ba</code> to <code>_bz</code>,
+etc.  The code is written such that it will expand the names further if
+needed but it is more likely that the script will have fewer unique
+variables than the number of unique new names that can be generated by the
+compressor.</p>
+
+<p>As each new name is created, a check is made to ensure that it does not
+already exist in the script.  For example, common loop variable names such
+as <code>i</code> or <code>j</code> will cause it to skip those new names
+if they are used in the script already.  Likewise, if the new name is
+longer than the existing name, it will not be replaced.  However, as noted,
+you could remove that check in order to completely obfuscate the names if
+necessary.</p>
+
+<h2>Conclusion</h2>
+<p>On average, my own scripts have been reduced in size by 50% to 60%.
+Adding in variable name compression increases the savings by an additional
+10% to 15% in the average script.  Naturally, the more you comment your
+JavaScript code, use indentation to make the code more readable, and use
+descriptive variable names, the better the compression rates as there is
+more stuff to remove. Using semi-colons to mark statement endpoints can
+also increase the compression rates as it enables the code to remove most
+if not all of the line feed characters too.</p>
+
+<h2>History</h2>
+<table cellspacing="0" cellpadding="0" border="0">
+  <tr>
+    <td valign="top">06/26/2006</td>
+    <td width="50px">&nbsp;</td>
+    <td>Modified the compression code to allow for conditional compilation
+blocks (<code>/*@ @*/</code>).  Modified the command line compressor to
+scan and compress sub-folders if the <b>/r</b> option is specified.</td>
+  </tr>
+  <tr>
+    <td colspan="3">&nbsp;</td>
+  </tr>
+  <tr>
+    <td valign="top">03/05/2006</td>
+    <td width="50px">&nbsp;</td>
+    <td>Added the option to compress function parameter and variable names.
+Tested the code under Visual Studio 2005 and .NET 2.0.  The demo project is
+a Visual Studio 2003 project but will convert and build without any
+problems under Visual Studio 2005.</td>
+  </tr>
+  <tr>
+    <td colspan="3">&nbsp;</td>
+  </tr>
+  <tr>
+    <td>07/25/2003</td>
+    <td width="50px">&nbsp;</td>
+    <td>Initial release.</td>
+  </tr>
+</table>
+
+<!-------------------------------    That's it!   --------------------------->
+</body>
+</html>
